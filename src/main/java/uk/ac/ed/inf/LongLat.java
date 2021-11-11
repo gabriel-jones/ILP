@@ -1,17 +1,9 @@
 package uk.ac.ed.inf;
 
 public class LongLat {
+    // The longitude and latitude variables stored
     public double longitude;
     public double latitude;
-
-    // One move (degrees)
-    final static double MOVE_AMOUNT = 0.00015;
-
-    // Bounds of the drone confinement area
-    final static double MIN_LONG = -3.192473;
-    final static double MAX_LONG = -3.184319;
-    final static double MIN_LAT = 55.942617;
-    final static double MAX_LAT = 55.946233;
 
     /**
      * Creates a new LongLat object with the specified coordinates
@@ -28,7 +20,7 @@ public class LongLat {
      * @return true if the latitude and longitude are within the bounds of the drone confinement area
      */
     public boolean isConfined() {
-        return longitude > MIN_LONG && longitude < MAX_LONG && latitude > MIN_LAT && latitude < MAX_LAT;
+        return longitude > Constant.MIN_LONG && longitude < Constant.MAX_LONG && latitude > Constant.MIN_LAT && latitude < Constant.MAX_LAT;
     }
 
     /**
@@ -47,16 +39,17 @@ public class LongLat {
      * @return true if the provided location is close to this position
      */
     public boolean closeTo(LongLat location) {
-        return distanceTo(location) < MOVE_AMOUNT;
+        return distanceTo(location) < Constant.MOVE_AMOUNT;
     }
 
     /**
      * Calculates the new position after moving MOVE_AMOUNT degrees in the direction of the specified angle
      * @param angle Must be a multiple of 10, 0 for east, 90 for north, 180 for west, 270 for south or other
      *              angle in between. If angle is -999, returns the same position
-     * @return
+     * @return the next calculated position
      */
     public LongLat nextPosition(int angle) {
+        // On throwaway value of -999, return self (for hover)
         if (angle == -999) {
             return this;
         }
@@ -65,8 +58,8 @@ public class LongLat {
         }
 
         double theta = Math.toRadians(angle);
-        double deltaLong = Math.cos(theta) * MOVE_AMOUNT;
-        double deltaLat = Math.sin(theta) * MOVE_AMOUNT;
+        double deltaLong = Math.cos(theta) * Constant.MOVE_AMOUNT;
+        double deltaLat = Math.sin(theta) * Constant.MOVE_AMOUNT;
         return new LongLat(longitude + deltaLong, latitude + deltaLat);
     }
 
@@ -81,6 +74,11 @@ public class LongLat {
         double theta = Math.atan2(deltaLat, deltaLong);
 
         double angle = Math.toDegrees(theta);
+        if (angle < 0) {
+            // Angle must be positive
+            angle = 360 - Math.abs(angle);
+        }
+        // Round to nearest 10 degrees
         return (int)(Math.round(angle / 10) * 10);
     }
 }

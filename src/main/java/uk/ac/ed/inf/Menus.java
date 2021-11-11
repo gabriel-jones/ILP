@@ -8,23 +8,23 @@ import com.google.gson.reflect.TypeToken;
 import uk.ac.ed.inf.models.api.MenuItem;
 import uk.ac.ed.inf.models.api.Vendor;
 
-public class Menus extends ServerClient {
+public class Menus {
+    // The list of vendors on the server
     ArrayList<Vendor> vendors;
 
     /**
      * Creates a new Menus object and fetches the menu data from the server
-     * @param host hostname of the server
-     * @param port port to connect to the server via
+     * @param client the HTTP client to use for fetching resources from the server
      */
-    public Menus(String host, String port) {
-        super(host, port);
-
+    public Menus(ServerClient client) {
         // Fetch the menu from the server
-        HttpResponse<String> json = this.httpGet("/menus/menus.json");
+        HttpResponse<String> json = client.httpGet("/menus/menus.json");
 
-        // Cast response JSON string to list of Vendor objects
-        Type listType = new TypeToken<ArrayList<Vendor>>() {}.getType();
-        this.vendors = new Gson().fromJson(json.body(), listType);
+        if (json != null) {
+            // Cast response JSON string to list of Vendor objects
+            Type listType = new TypeToken<ArrayList<Vendor>>() {}.getType();
+            this.vendors = new Gson().fromJson(json.body(), listType);
+        }
     }
 
     /**

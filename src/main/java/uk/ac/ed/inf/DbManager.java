@@ -6,16 +6,32 @@ import java.sql.*;
 import java.util.ArrayList;
 
 public class DbManager {
+    // Port to connect to database on
     String port;
+
+    // Database connection
     Connection connection;
 
+    /**
+     * Gets the databse url from the given database port using the JDBC derby protocol
+     * @return formatted JDBC url
+     */
     private String getJdbcUrl() {
         return String.format("jdbc:derby://localhost:%s/derbyDB", this.port);
     }
 
+    /**
+     * Creates DbManager class and sets connection port
+     * @param port database connection port
+     */
     public DbManager(String port) {
         this.port = port;
+    }
 
+    /**
+     * Connects to the database and creates necessary tables
+     */
+    public boolean connect() {
         try {
             // Connect to database and check metadata for table info
             this.connection = DriverManager.getConnection(this.getJdbcUrl());
@@ -24,10 +40,10 @@ public class DbManager {
             // Drop tables if they exist, then create them (wipes data)
             createTable(metaData, "deliveries");
             createTable(metaData, "flightpath");
-
+            return true;
         } catch (SQLException e) {
-            // TODO: db error
-            System.err.println(e);
+            e.printStackTrace();
+            return false;
         }
     }
 
@@ -35,7 +51,7 @@ public class DbManager {
      * Create a table if it doesn't exist. Drop the table if it does exist
      * @param metaData metadata on tables in the database
      * @param tableName table to create (and drop if it exists)
-     * @throws SQLException
+     * @throws SQLException if exception on dropping / creating table
      */
     private void createTable(DatabaseMetaData metaData, String tableName) throws SQLException {
         // Check if table exists
@@ -56,91 +72,99 @@ public class DbManager {
      * @return the SQL for creating the specified table
      */
     private String getTableSchema(String tableName) {
-        switch (tableName) {
-            case "deliveries":
-                return Delivery.getSchema();
-            case "flightpath":
-                return Flightpath.getSchema();
-            default: return null;
-        }
+        return switch (tableName) {
+            case "deliveries" -> Delivery.getSchema();
+            case "flightpath" -> Flightpath.getSchema();
+            default -> null;
+        };
     }
 
     /**
-     *
-     * @return
+     * Gets all the orders in the database with a delivery date of `deliveryDate`
+     * @param deliveryDate target date to filter by
+     * @return all the orders for the given date
      */
     public ArrayList<Order> getOrders(Date deliveryDate) {
+        ArrayList<Order> orders = new ArrayList<>();
         try {
             final String sql = "select * from orders where deliveryDate = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setDate(1, deliveryDate);
 
             ResultSet results = statement.executeQuery();
-            ArrayList<Order> orders = new ArrayList<>();
             while (results.next()) {
                 orders.add(new Order(results));
             }
-            return orders;
         } catch (SQLException e) {
-            System.err.println(e);
-            return null;
+            e.printStackTrace();
         }
+        return orders;
     }
 
     /**
-     *
-     * @return
+     * Get all the flightpath rows in the database
+     * @return all the flightpaths
      */
     public ArrayList<Flightpath> getFlightpaths() {
+        ArrayList<Flightpath> flightpaths = new ArrayList<>();
         try {
             final String sql = "select * from flightpath";
             Statement statement = connection.createStatement();
 
             ResultSet results = statement.executeQuery(sql);
-            ArrayList<Flightpath> flightpaths = new ArrayList<>();
             while (results.next()) {
                 flightpaths.add(new Flightpath(results));
             }
-            return flightpaths;
         } catch (SQLException e) {
-            System.err.println(e);
-            return null;
+            e.printStackTrace();
         }
+        return flightpaths;
     }
 
+    /**
+     * Gets line items for a given order
+     * @param order to fetch details for
+     * @return list of all the items to deliver for an order
+     */
     public ArrayList<OrderDetail> getOrderDetails(Order order) {
+        ArrayList<OrderDetail> orderDetails = new ArrayList<>();
         try {
             final String sql = "select * from orderDetails where orderNo = ?";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, order.id);
 
             ResultSet results = statement.executeQuery();
-            ArrayList<OrderDetail> orderDetails = new ArrayList<>();
             while (results.next()) {
                 orderDetails.add(new OrderDetail(results));
             }
-            return orderDetails;
         } catch (SQLException e) {
-            System.err.println(e);
-            return null;
+            e.printStackTrace();
         }
+        return orderDetails;
     }
 
-    public boolean insertDelivery(Delivery delivery) {
+    /**
+     * Creates a delivery row in the database
+     * @param delivery row to insert
+     */
+    public void insertDelivery(Delivery delivery) {
         try {
             final String sql = "insert into deliveries (orderNo, deliveredTo, costInPence) values (?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setString(1, delivery.orderId);
             statement.setString(2, delivery.deliveredTo);
             statement.setInt(3, delivery.costInPence);
-            return statement.execute();
+            statement.execute();
         } catch (SQLException e) {
-            System.err.println(e);
-            return false;
+            e.printStackTrace();
         }
     }
 
-    public boolean insertFlightpath(Flightpath flightpath) {
+    /**
+     * Creates a flightpath in the database
+     * @param flightpath row to insert
+     */
+    public void insertFlightpath(Flightpath flightpath) {
         try {
             final String sql = "insert into flightpath (orderNo, fromLongitude, fromLatitude, angle, toLongitude, toLatitude) values (?, ?, ?, ?, ?, ?)";
             PreparedStatement statement = connection.prepareStatement(sql);
@@ -150,10 +174,9 @@ public class DbManager {
             statement.setInt(4, flightpath.angle);
             statement.setDouble(5, flightpath.to.longitude);
             statement.setDouble(6, flightpath.to.latitude);
-            return statement.execute();
+            statement.execute();
         } catch (SQLException e) {
-            System.err.println(e);
-            return false;
+            e.printStackTrace();
         }
     }
 }

@@ -5,17 +5,32 @@ import uk.ac.ed.inf.LongLat;
 import java.util.ArrayList;
 
 public class Vendor {
-    String name;
-    String location;
-    LongLat coordinates;
-    ArrayList<MenuItem> menu;
+    // Name of vendor
+    private String name;
 
+    // What3Words location of vendor
+    private String location;
+
+    // LongLat generated from What3Words location
+    private LongLat coordinates;
+
+    // Items served by this vendor
+    private ArrayList<MenuItem> menu;
+
+    // Getter for name
     public String getName() { return name; }
+
+    // Getter for location
     public String getLocation() { return location; }
+
+    // Getter for coordinates
     public LongLat getCoordinates() { return coordinates; }
+
+    // Getter for menu
     public ArrayList<MenuItem> getMenu() { return menu; }
 
-    public void setCoordinates(LongLat coords) {
-        this.coordinates = coords;
+    // Setter for coordinates
+    public void setCoordinates(LongLat coordinates) {
+        this.coordinates = coordinates;
     }
 }
